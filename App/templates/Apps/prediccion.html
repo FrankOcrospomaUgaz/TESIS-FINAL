@@ -1,0 +1,83 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid py-4">
+    <h2 class="text-center">Predicción de Riesgo financiero</h2>
+
+    <ul class="nav nav-tabs mb-4" id="prediction-tabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link {% if not prediccion_resultado %}active{% endif %}" id="predecir-tab" data-bs-toggle="tab" href="#predecir" role="tab" aria-controls="predecir" aria-selected="true">Predecir</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if prediccion_resultado %}active{% endif %}" id="resultados-tab" data-bs-toggle="tab" href="#resultados" role="tab" aria-controls="resultados" aria-selected="false">Resultados</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="riesgos-tab" data-bs-toggle="tab" href="#riesgos" role="tab" aria-controls="riesgos" aria-selected="false">Riesgos</a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="prediction-tabs-content">
+        <!-- Pestaña Predecir -->
+        <div class="tab-pane fade {% if not prediccion_resultado %}show active{% endif %}" id="predecir" role="tabpanel" aria-labelledby="predecir-tab">
+            <h5>Indique el gasto que desea realizar:</h5>
+            <form method="POST" action="{% url 'predecir' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="monto" class="form-label">Monto:</label>
+                    <input type="number" class="form-control" id="monto" name="monto" placeholder="S/.0">
+                </div>
+
+                <div class="mb-3">
+                    <label for="fecha" class="form-label">Fecha:</label>
+                    <input type="date" class="form-control" id="fecha" name="fecha">
+                </div>
+
+                <div class="mb-3">
+                    <label for="motivo" class="form-label">Motivo:</label>
+                    <select class="form-select" id="motivo" name="motivo">
+                        <option value="Inversión">Inversión</option>
+                        <option value="Operación">Operación</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label">Descripción:</label>
+                    <textarea class="form-control" id="descripcion" name="descripcion" placeholder="Descripcion..."></textarea>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="submit" name="action" value="actualizar" class="btn btn-primary">Actualizar data</button>
+                    <button type="submit" name="action" value="predecir" class="btn btn-success">Predecir riesgo</button>
+                    <button type="reset" class="btn btn-secondary">Cancelar</button>
+                </div>
+                
+            </form>
+        </div>
+
+        <!-- Pestaña Resultados -->
+        <div class="tab-pane fade {% if prediccion_resultado %}show active{% endif %}" id="resultados" role="tabpanel" aria-labelledby="resultados-tab">
+            <div class="container-fluid py-4">
+                <h2 class="text-center">Resultados de Predicción Financiera</h2>
+            
+                <div class="alert alert-info" role="alert">
+                    {{ respuesta }}
+                </div>
+
+                <div class="d-flex flex-column align-items-center">
+                    <a href="#" class="btn btn-danger mb-3" style="width: 100%; max-width: 300px;">Ver obligaciones afectadas</a>
+                    <a href="#" class="btn btn-primary mb-3" style="width: 100%; max-width: 300px;">Mejores alternativas</a>
+                    <a href="#" class="btn btn-success" style="width: 100%; max-width: 300px;">Nueva predicción</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña Riesgos -->
+        <div class="tab-pane fade" id="riesgos" role="tabpanel" aria-labelledby="riesgos-tab">
+            <h5>Riesgos</h5>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

@@ -1,0 +1,91 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <h2 class="text-center">Gestión de Transacciones</h2>
+
+    <!-- Formulario para importar archivo Excel -->
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ form.file.label_tag }}
+            {{ form.file }}
+        </div>
+        <button type="submit" name="upload_excel" class="btn btn-primary">Importar Excel</button>
+    </form>
+
+    <br>
+
+    <!-- Tabla para mostrar todas las transacciones -->
+    <table id="transaccionesTable" class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Usuario</th>
+                <th>Descripción</th>
+                <th>Monto</th>
+                <th>Tipo de Transacción</th>
+                <th>Fecha de Transacción</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaccion in transacciones %}
+            <tr>
+                <td>{{ transaccion.usuario }}</td>
+                <td>{{ transaccion.descripcion }}</td>
+                <td>{{ transaccion.monto }}</td>
+                <td>{{ transaccion.tipo_transaccion }}</td>
+                <td>{{ transaccion.fecha_transaccion }}</td>
+                <td>
+                    <!-- Aquí puedes agregar botones para editar o eliminar -->
+                    <a href="#" class="btn btn-warning">Editar</a>
+                    <a href="#" class="btn btn-danger">Eliminar</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">No hay transacciones registradas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+<!-- Incluir los archivos de DataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#transaccionesTable').DataTable({
+            "paging": true,  // Activar paginación
+            "pageLength": 20,  // Número de filas por página
+            "lengthMenu": [10, 20, 50, 100, 500, 1000],  // Opciones de paginación
+            "searching": true,  // Habilitar búsqueda
+            "ordering": true,   // Habilitar ordenación de columnas
+            "info": true,  // Mostrar información sobre el número de registros
+            "autoWidth": false,  // Desactivar el autoajuste de ancho de columnas
+            "scrollX": true,  // Activar desplazamiento horizontal si es necesario
+            "language": {
+                "lengthMenu": "Mostrar _MENU_ transacciones por página",
+                "zeroRecords": "No se encontraron resultados",
+                "info": "Mostrando página _PAGE_ de _PAGES_",
+                "infoEmpty": "No hay transacciones disponibles",
+                "infoFiltered": "(filtrado de _MAX_ transacciones totales)",
+                "search": "Buscar:",
+                "paginate": {
+                    "first": "Primero",
+                    "last": "Último",
+                    "next": "Siguiente",
+                    "previous": "Anterior"
+                }
+            }
+        });
+    });
+</script>
+
+{% endblock content %}

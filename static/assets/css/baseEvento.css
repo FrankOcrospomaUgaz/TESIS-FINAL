@@ -1,0 +1,47 @@
+.bg-sidebar {
+    background-color: #343a40 !important;
+    /* Usamos !important para asegurarnos de que se aplique este estilo */
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    padding-top: 3.5rem;
+    /* Espacio para dejar lugar al menú */
+    background-color: #343a40;
+    /* Color de fondo del menú */
+    color: #fff;
+    /* Color del texto */
+}
+
+.nav-link {
+    color: #fff;
+    background-color: #343a40;
+    /* Color de fondo del enlace */
+}
+
+.nav-link:hover {
+    color: #007bff;
+}
+
+.active {
+    background-color: #007bff;
+}
+
+.active:hover {
+    background-color: #0056b3;
+}
+
+.content {
+    margin-left: 20%;
+    /* Ancho del menú */
+    padding: 2rem;
+}
+
+.sidebar-bg {
+    background-color: #343a40;
+    /* Color de fondo del menú */
+}

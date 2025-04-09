@@ -24,7 +24,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
         # path('transacciones/', transacciones, name='mostrar_transacciones'),
         path('predecir/', predecir_view, name='predecir'),
+        path('transacciones/', transacciones, name='transacciones'),
 
-        # path("", include('App.urls')),
+    path('ventas_totales/', obtener_ventas_totales, name='ventas_totales'),
+            path('registrar_gasto/', registrar_gasto, name='registrar_gasto'),  # Nueva ruta para registrar el gasto
+
 
 ]

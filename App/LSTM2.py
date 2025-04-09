@@ -95,8 +95,7 @@ def build_lstm_model(X_train):
 
 def entrenar_y_predecir_lstm(usuario):
     """
-    Entrena el modelo LSTM y guarda los pesos del modelo. 
-    Prepara los datos de las transacciones y realiza predicciones, aplicando reglas de negocio.
+    Entrena el modelo LSTM y guarda los pesos del modelo. Prepara los datos de las transacciones y realiza predicciones, aplicando reglas de negocio.
     """
     transacciones = Transaccion.objects.filter(usuario=usuario).order_by('fecha_transaccion')
 
@@ -111,24 +110,19 @@ def entrenar_y_predecir_lstm(usuario):
 
     split = int(0.8 * len(X))
     X_train, y_train = X[:split], y[:split]
-
     model = build_lstm_model(X_train)
-
     # Entrenar el modelo
     model.fit(X_train, y_train, batch_size=256, epochs=5)
-
     # Guardar los pesos del modelo
     modelos_path = os.path.join(os.path.dirname(__file__), 'modelos')
     if not os.path.exists(modelos_path):
         os.makedirs(modelos_path)
-
     model_path = os.path.join(modelos_path, 'lstm_model.weights.h5')
     try:
         model.save_weights(model_path)
         print(f"Pesos del modelo guardados en: {model_path}")
     except Exception as e:
         print(f"Error guardando los pesos: {e}")
-
     # Hacer predicciones
     X_test, y_test = X[split:], y[split:]
     predicciones = model.predict(X_test)
@@ -149,7 +143,7 @@ def entrenar_y_predecir_lstm(usuario):
         # Guardar la predicción y el resultado de la evaluación en la base de datos
         PrediccionFinanciera.objects.create(
             usuario=usuario,
-            categoria=None,  # No hay relación de categoría en la transacción, por lo que puedes dejarlo en None
+            categoria=None, 
             prediccion_monto=prediccion_monto,
             fecha_prediccion=fecha_prediccion,
             generado_en=datetime.now(),
@@ -157,7 +151,6 @@ def entrenar_y_predecir_lstm(usuario):
             motivo=resultado_evaluacion.get('motivo', ''),
             recomendacion=resultado_evaluacion.get('recomendacion', '')
         )
-
     return predicciones
 
 

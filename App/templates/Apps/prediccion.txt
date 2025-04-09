@@ -182,40 +182,12 @@
         </div>
     </div>
 </div>
-<!-- Modal de Éxito (Registro exitoso) -->
-<div class="modal fade" id="registroExitoModal" tabindex="-1" role="dialog" aria-labelledby="registroExitoModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-body text-center">
-                <h5 class="text-success">¡Registro Exitoso!</h5>
-                <p>El gasto se ha registrado correctamente.</p>
-                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Cerrar</button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const formPrediccion = document.getElementById('form-prediccion');
-        const montoInput = document.getElementById('monto');
-        const errorModal = new bootstrap.Modal(document.getElementById('errorModal')); // Modal de error
-    
-        formPrediccion.addEventListener('submit', function(event) {
-            // Obtener el monto del input
-            const monto = parseFloat(montoInput.value);
-    
-            // Verificar si el monto es menor a 500
-            if (monto < 500) {
-                event.preventDefault(); // Evitar el envío del formulario
-                errorModal.show(); // Mostrar el modal de error
-            }
-        });
-    });
-
     let currentChart = null;  // Variable global para almacenar el gráfico actual
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -432,8 +404,8 @@
         const progressBar = document.getElementById('progress-bar');
         const registrarGastoBtn = document.getElementById('registrar-gasto-btn');
         const registroExitoModal = new bootstrap.Modal(document.getElementById('registroExitoModal'));
-        const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-    
+        const errorModal = new bootstrap.Modal(document.getElementById('errorModal')); // Modal de error
+
         // Mostrar/ocultar el campo de cuotas cuando se seleccione/deseleccione el checkbox
         esEnCuotasCheckbox.addEventListener('change', function() {
             if (this.checked) {
@@ -442,53 +414,24 @@
                 campoCuotas.style.display = 'none';  // Ocultar el campo
             }
         });
-    
-        // Mostrar el modal de carga al hacer clic en el botón "Predecir riesgo"
-        const predecirRiesgoBtn = document.querySelector('button[name="action"][value="predecir"]');
-        predecirRiesgoBtn.addEventListener('click', function(event) {
-            event.preventDefault();  // Prevenir el envío del formulario por defecto
-    
-            loadingModal.show();  // Mostrar el modal de carga
-    
-            // Simulación de proceso de predicción (esto debería ser reemplazado por la lógica real)
-            setTimeout(function() {
-    
-                formPrediccion.submit();  // Aquí se enviaría el formulario
-            }, 30);  
-            loadingModal.hide();  // Ocultar el modal de carga
 
-        });
-    
         // Habilitar tooltips de Bootstrap
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-    
+
         // Función para registrar el gasto
         registrarGastoBtn.addEventListener('click', function(event) {
             event.preventDefault(); // Prevenir la recarga de la página
-    
-            // Verificar si la URL 'registrar_gasto' es válida
-            const urlRegistrarGasto = "{% url 'registrar_gasto' %}";
-    
-            if (!urlRegistrarGasto) {
-                console.error('La URL para registrar el gasto no se encuentra.');
-                return;
-            }
-    
+
             // Recopilar los datos del formulario de predicción
             const monto = document.getElementById('resultado-monto').getAttribute('data-monto');
             const fecha = document.getElementById('resultado-fecha').getAttribute('data-fecha');
             const descripcion = document.getElementById('resultado-descripcion').getAttribute('data-descripcion');
-    
-            if (!monto || !fecha || !descripcion) {
-                console.error('Faltan datos para registrar el gasto.');
-                return;
-            }
-    
+
             // Realizar la solicitud AJAX
-            fetch(urlRegistrarGasto, {
+            fetch("{% url 'registrar_gasto' %}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -505,21 +448,65 @@
                 if (data.success) {
                     // Mostrar modal de éxito
                     registroExitoModal.show();
-                    
-                    // Deshabilitar el botón de registrar gasto
-                    document.getElementById("registrar-gasto-btn").disabled = true;
                 } else {
                     alert('Error al registrar el gasto: ' + data.message);
                 }
             })
-            .catch(error => {
-                console.error('Error al registrar el gasto: ', error);
+            .catch(error => console.error('Error:', error));
+        });
+
+        // Validación del monto antes de mostrar el modal de carga
+        formPrediccion.addEventListener('submit', function(event) {
+            const monto = parseFloat(document.getElementById('monto').value); // Obtener el monto ingresado
+
+            // Validar que el monto sea mayor o igual a 500
+            if (isNaN(monto) || monto < 500) {
+                event.preventDefault(); // Evitar que el formulario se envíe
+                
+                // Mostrar el modal de error en lugar del alert
+                errorModal.show();
+                return; // Salir de la función sin mostrar el modal de carga
+            }
+        
+
+            loadingModal.show();
+
+            // Simular un progreso mientras se espera la respuesta del servidor
+            let progress = 0;
+            const interval = setInterval(function() {
+                if (progress >= 100) {
+                    clearInterval(interval);
+                } else {
+                    progress += 10;  // Incremento simulado del progreso
+                    progressBar.style.width = progress + '%';
+                }
+            }, 500);  // Cada 500ms aumenta el progreso
+
+            // Al finalizar el formulario, ocultar el modal
+            formPrediccion.addEventListener('ajax:complete', function() {
+                clearInterval(interval);
+                loadingModal.hide();
+                progressBar.style.width = '0%';  // Resetear la barra de progreso
             });
         });
     });
-    
-    
 
+    document.addEventListener('DOMContentLoaded', function() {
+        const formPrediccion = document.getElementById('form-prediccion');
+        const montoInput = document.getElementById('monto');
+        const errorModal = new bootstrap.Modal(document.getElementById('errorModal')); // Modal de error
+    
+        formPrediccion.addEventListener('submit', function(event) {
+            // Obtener el monto del input
+            const monto = parseFloat(montoInput.value);
+    
+            // Verificar si el monto es menor a 500
+            if (monto < 500) {
+                event.preventDefault(); // Evitar el envío del formulario
+                errorModal.show(); // Mostrar el modal de error
+            }
+        });
+    });
 
     
     

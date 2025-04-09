@@ -29,9 +29,24 @@ class MetaEgreso(models.Model):
     fecha_establecida = models.DateField()
     cumplido = models.BooleanField(default=False)
     registrado_en = models.DateTimeField(auto_now_add=True)
-
+    class Meta:
+        verbose_name_plural = "Obligaciones Financieras" 
     def __str__(self):
         return f'Meta {self.id} - {self.monto_meta}'
+
+
+class PrediccionFinanciera(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    categoria = models.ForeignKey(CategoriaGasto, on_delete=models.CASCADE, null=True, blank=True)  # Para permitir valores None
+    prediccion_monto = models.DecimalField(max_digits=12, decimal_places=2)
+    fecha_prediccion = models.DateField()
+    generado_en = models.DateTimeField(auto_now_add=True)
+    decision = models.CharField(max_length=100, null=True, blank=True)
+    motivo = models.TextField(null=True, blank=True)
+    recomendacion = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f'Predicción {self.id} - {self.prediccion_monto}'
 
 
 # class ObligacionFinanciera(models.Model):
@@ -59,27 +74,14 @@ class MetaEgreso(models.Model):
 #         return f'Gasto {self.id} - {self.monto}'
 
 
-class PrediccionFinanciera(models.Model):
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
-    categoria = models.ForeignKey(CategoriaGasto, on_delete=models.CASCADE, null=True, blank=True)  # Para permitir valores None
-    prediccion_monto = models.DecimalField(max_digits=12, decimal_places=2)
-    fecha_prediccion = models.DateField()
-    generado_en = models.DateTimeField(auto_now_add=True)
-    decision = models.CharField(max_length=100, null=True, blank=True)
-    motivo = models.TextField(null=True, blank=True)
-    recomendacion = models.TextField(null=True, blank=True)
-
-    def __str__(self):
-        return f'Predicción {self.id} - {self.prediccion_monto}'
 
 
+# class ResultadoPrediccion(models.Model):
+#     prediccion = models.ForeignKey(PrediccionFinanciera, on_delete=models.CASCADE)
+#     categoria = models.ForeignKey(CategoriaGasto, on_delete=models.CASCADE)
+#     monto_sugerido = models.DecimalField(max_digits=12, decimal_places=2)
+#     alternativas = models.IntegerField()
+#     fecha_resultado = models.DateField()
 
-class ResultadoPrediccion(models.Model):
-    prediccion = models.ForeignKey(PrediccionFinanciera, on_delete=models.CASCADE)
-    categoria = models.ForeignKey(CategoriaGasto, on_delete=models.CASCADE)
-    monto_sugerido = models.DecimalField(max_digits=12, decimal_places=2)
-    alternativas = models.IntegerField()
-    fecha_resultado = models.DateField()
-
-    def __str__(self):
-        return f'Resultado {self.id} - {self.monto_sugerido}'
+#     def __str__(self):
+#         return f'Resultado {self.id} - {self.monto_sugerido}'

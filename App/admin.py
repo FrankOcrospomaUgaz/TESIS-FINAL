@@ -21,6 +21,25 @@ class MetaEgresoAdmin(admin.ModelAdmin):
     class Media:
         js = ('https://code.jquery.com/jquery-3.6.4.min.js', 'assets/js/control_botones.js', 'assets/js/editar_botones.js',)
 
+@admin.register(CategoriaGasto)
+class CategoriaGastoAdmin(admin.ModelAdmin):
+    list_display = ['nombre_categoria', 'descripcion']
+    ordering = ['nombre_categoria']
+    search_fields = ['nombre_categoria']
+    list_per_page = 5
+    class Media:
+        js = ('https://code.jquery.com/jquery-3.6.4.min.js', 'assets/js/control_botones.js', 'assets/js/editar_botones.js',)
+
+
+@admin.register(PrediccionFinanciera)
+class PrediccionFinancieraAdmin(admin.ModelAdmin):
+    list_display = ['usuario', 'categoria', 'prediccion_monto', 'fecha_prediccion', 'generado_en']
+    ordering = ['fecha_prediccion']
+    search_fields = ['usuario__username', 'usuario__first_name', 'usuario__last_name', 'categoria__nombre_categoria']
+    list_per_page = 5
+    class Media:
+        js = ('https://code.jquery.com/jquery-3.6.4.min.js', 'assets/js/control_botones.js', 'assets/js/editar_botones.js',)
+
 
 # @admin.register(ObligacionFinanciera)
 # class ObligacionFinancieraAdmin(admin.ModelAdmin):
@@ -44,31 +63,11 @@ class MetaEgresoAdmin(admin.ModelAdmin):
 #         js = ('https://code.jquery.com/jquery-3.6.4.min.js', 'assets/js/control_botones.js', 'assets/js/editar_botones.js',)
 
 
-@admin.register(CategoriaGasto)
-class CategoriaGastoAdmin(admin.ModelAdmin):
-    list_display = ['nombre_categoria', 'descripcion']
-    ordering = ['nombre_categoria']
-    search_fields = ['nombre_categoria']
-    list_per_page = 5
-    class Media:
-        js = ('https://code.jquery.com/jquery-3.6.4.min.js', 'assets/js/control_botones.js', 'assets/js/editar_botones.js',)
-
-
-@admin.register(PrediccionFinanciera)
-class PrediccionFinancieraAdmin(admin.ModelAdmin):
-    list_display = ['usuario', 'categoria', 'prediccion_monto', 'fecha_prediccion', 'generado_en']
-    ordering = ['fecha_prediccion']
-    search_fields = ['usuario__username', 'usuario__first_name', 'usuario__last_name', 'categoria__nombre_categoria']
-    list_per_page = 5
-    class Media:
-        js = ('https://code.jquery.com/jquery-3.6.4.min.js', 'assets/js/control_botones.js', 'assets/js/editar_botones.js',)
-
-
-@admin.register(ResultadoPrediccion)
-class ResultadoPrediccionAdmin(admin.ModelAdmin):
-    list_display = ['prediccion', 'categoria', 'monto_sugerido', 'alternativas', 'fecha_resultado']
-    ordering = ['fecha_resultado']
-    search_fields = ['prediccion__usuario__username', 'prediccion__usuario__first_name', 'prediccion__usuario__last_name', 'categoria__nombre_categoria']
-    list_per_page = 5
-    class Media:
-        js = ('https://code.jquery.com/jquery-3.6.4.min.js', 'assets/js/control_botones.js', 'assets/js/editar_botones.js',)
+# @admin.register(ResultadoPrediccion)
+# class ResultadoPrediccionAdmin(admin.ModelAdmin):
+#     list_display = ['prediccion', 'categoria', 'monto_sugerido', 'alternativas', 'fecha_resultado']
+#     ordering = ['fecha_resultado']
+#     search_fields = ['prediccion__usuario__username', 'prediccion__usuario__first_name', 'prediccion__usuario__last_name', 'categoria__nombre_categoria']
+#     list_per_page = 5
+#     class Media:
+#         js = ('https://code.jquery.com/jquery-3.6.4.min.js', 'assets/js/control_botones.js', 'assets/js/editar_botones.js',)

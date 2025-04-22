@@ -18,10 +18,14 @@ from django.contrib import admin
 from django.urls import path
 from django.urls import path,include
 from App.views import *
+from django.shortcuts import redirect
 
 
 urlpatterns = [
+    path('', lambda request: redirect('admin/', permanent=False)),
+
     path('admin/', admin.site.urls),
+    
         # path('transacciones/', transacciones, name='mostrar_transacciones'),
         path('predecir/', predecir_view, name='predecir'),
         path('transacciones/', transacciones, name='transacciones'),

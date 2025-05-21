@@ -13,7 +13,12 @@ from django.core.paginator import Paginator
 from .forms import ExcelUploadForm
 from django.contrib import messages
 from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
-
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import MetaEgreso
+from .forms import MetaEgresoForm
+from django.urls import reverse_lazy
+from django.views.generic import DeleteView
+from django.utils.decorators import method_decorator
 
 def predecir_view(request):
     prediccion_resultado = None
@@ -275,3 +280,181 @@ def ventas_agrupadas(request):
         'valores': [float(d['total']) for d in datos]
     }
     return JsonResponse(resultado)
+
+
+@login_required
+def obligaciones_financieras(request):
+    # Obtener todas las obligaciones financieras registradas
+    obligaciones_list = MetaEgreso.objects.all()
+    paginator = Paginator(obligaciones_list, 50)
+    page_number = request.GET.get('page')
+    obligaciones = paginator.get_page(page_number)
+
+    # Proceso de importación del archivo Excel
+    if request.method == 'POST' and 'upload_excel' in request.POST:
+        form = ExcelUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            excel_file = request.FILES['file']
+            try:
+                df = pd.read_excel(excel_file)
+                df.columns = df.columns.str.strip()  # Elimina espacios en blanco en los nombres de las columnas
+                required_columns = ['Categoria', 'Descripcion', 'Monto Meta', 'Fecha Establecida', 'Tipo Gasto']
+
+                # Verificar que las columnas requeridas estén presentes
+                for col in required_columns:
+                    if col not in df.columns:
+                        raise KeyError(f"Falta la columna '{col}' en el archivo Excel")
+
+                # Convertir la columna de fecha
+                df['Fecha Establecida'] = pd.to_datetime(df['Fecha Establecida'], errors='coerce', dayfirst=True)
+
+                # Si hay fechas nulas, las reemplazamos con fechas válidas cercanas
+                df['Fecha Establecida'].fillna(method='ffill', inplace=True)  # Rellenamos con la fecha anterior
+
+                # Procesar las metas de egreso
+                for index, row in df.iterrows():
+                    MetaEgreso.objects.create(
+                        usuario=request.user,
+                        categoria=row['Categoria'],
+                        descripcion=row['Descripcion'],
+                        monto_meta=row['Monto Meta'],
+                        fecha_establecida=row['Fecha Establecida'],
+                        tipogasto=row['Tipo Gasto'],
+                    )
+                messages.success(request, "Las obligaciones financieras se importaron correctamente.")
+            except KeyError as e:
+                messages.error(request, f"Error al procesar el archivo Excel: {e}")
+            except Exception as e:
+                messages.error(request, f"Error al procesar el archivo Excel: {e}")
+        else:
+            messages.error(request, "Por favor, selecciona un archivo válido.")
+
+    form = ExcelUploadForm()
+    return render(request, 'Apps/obligacionesfinancieras.html', {'obligaciones': obligaciones, 'form': form})
+
+def obligacion_edit(request, id):
+    obligacion = get_object_or_404(MetaEgreso, id=id)
+
+    if request.method == 'POST':
+        form = MetaEgresoForm(request.POST, instance=obligacion)
+        if form.is_valid():
+            form.save()
+            # Redirigir a la página de éxito o lista de obligaciones
+    else:
+        form = MetaEgresoForm(instance=obligacion)
+
+    return render(request, 'obligacion_edit.html', {'form': form})
+@method_decorator(login_required, name='dispatch')
+class obligacion_delete(DeleteView):
+    model = MetaEgreso
+    template_name = 'Apps/obligacionesfinancieras_confirm_delete.html'
+    context_object_name = 'obligacion'
+    success_url = reverse_lazy('obligacionesfinancieras')  # Redirige al listado después de eliminar
+
+    def dispatch(self, *args, **kwargs):
+        # Este método puede manejar otros permisos si se requiere
+        return super().dispatch(*args, **kwargs)
+    
+@login_required
+def mark_as_cumplido(request, id):
+    # Obtén la obligación financiera utilizando el ID
+    obligacion = get_object_or_404(MetaEgreso, id=id)
+
+    # Marca la obligación como cumplida
+    obligacion.cumplido = True
+    obligacion.save()  # Guarda la actualización en la base de datos
+
+    # Redirige al usuario a la lista de obligaciones o a otra vista
+    return redirect('obligacionesfinancieras')  # Ajusta el nombre de la URL a la que deseas redirigir
+
+import logging
+
+# Configuración del logger
+logger = logging.getLogger(__name__)
+from calendar import monthrange
+
+from calendar import monthrange
+from datetime import datetime
+
+@login_required
+def duplicar_obligaciones(request):
+    if request.method == 'POST':
+        # Obtener los valores de los meses seleccionados
+        selected_month = request.POST.get('selected_month')
+        copy_month = request.POST.get('copy_month')
+
+        # Log de los valores recibidos
+        logger.debug(f"Mes seleccionado: {selected_month}, Mes origen (para copiar): {copy_month}")
+
+        # Validar que los valores sean numéricos y estén dentro del rango válido
+        if not selected_month or not copy_month:
+            logger.error("Mes seleccionado o mes origen no válidos")
+            return JsonResponse({'success': False, 'message': 'Mes seleccionado o mes origen no válidos'})
+
+        try:
+            selected_month = int(selected_month)
+            copy_month = int(copy_month)
+        except ValueError:
+            logger.error("Valor no numérico en los meses")
+            return JsonResponse({'success': False, 'message': 'Mes seleccionado o mes origen no válidos'})
+
+        # Verificar que los meses estén dentro del rango de 1 a 12
+        if not (1 <= selected_month <= 12) or not (1 <= copy_month <= 12):
+            logger.error(f"Mes fuera de rango: seleccionado={selected_month}, origen={copy_month}")
+            return JsonResponse({'success': False, 'message': 'Mes seleccionado o mes origen no válidos'})
+
+        # Filtrar las obligaciones del mes de origen
+        try:
+            # Filtrar las obligaciones usando fecha_establecida__month en lugar de ExtractMonth
+            obligaciones_a_duplicar = MetaEgreso.objects.filter(fecha_establecida__month=selected_month)
+
+            # Log de cuántos registros se encontraron
+            logger.debug(f"Obligaciones encontradas para el mes {copy_month}: {obligaciones_a_duplicar.count()}")
+
+            if not obligaciones_a_duplicar:
+                logger.warning(f"No se encontraron obligaciones para duplicar del mes {copy_month}")
+                return JsonResponse({'success': False, 'message': 'No se encontraron obligaciones para duplicar'})
+
+            # Duplicar las obligaciones al mes de destino
+            for obligacion in obligaciones_a_duplicar:
+                # Obtener el último día del mes de destino (selected_month)
+                last_day_of_month = monthrange(obligacion.fecha_establecida.year, copy_month)[1]
+                
+                # Establecer la fecha con el último día del mes
+                new_date = obligacion.fecha_establecida.replace(month=copy_month, day=last_day_of_month)
+
+                new_obligacion = MetaEgreso(
+                    usuario=obligacion.usuario,
+                    categoria=obligacion.categoria,
+                    descripcion=obligacion.descripcion,
+                    monto_meta=obligacion.monto_meta,
+                    fecha_establecida=new_date,  # Usar la nueva fecha con el último día del mes
+                    tipogasto=obligacion.tipogasto,
+                    cumplido=obligacion.cumplido,
+                    registrado_en=obligacion.registrado_en
+                )
+                new_obligacion.save()
+
+                # Log de cada duplicación realizada
+                logger.debug(f"Duplicada obligación: {new_obligacion.id} para el mes {selected_month}")
+
+            return JsonResponse({'success': True, 'message': 'Obligaciones duplicadas correctamente'})
+
+        except Exception as e:
+            logger.error(f"Error al duplicar las obligaciones: {str(e)}")
+            return JsonResponse({'success': False, 'message': 'Hubo un error al procesar la solicitud'})
+
+    return JsonResponse({'success': False, 'message': 'Método no permitido'})
+@login_required
+def crear_obligacion(request):
+    if request.method == 'POST':
+        form = MetaEgresoForm(request.POST)
+        if form.is_valid():
+            nueva_obligacion = form.save(commit=False)
+            nueva_obligacion.usuario = request.user  # Asignar el usuario actual
+            nueva_obligacion.save()
+            return redirect('obligacionesfinancieras')  # Redirigir a la lista de obligaciones
+    else:
+        form = MetaEgresoForm()
+
+    return render(request, 'crear_obligacion.html', {'form': form})

@@ -1,0 +1,43 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+
+<div class="container-fluid py-4">
+    <h2 class="text-center">Crear Nueva Obligación Financiera</h2>
+
+    <div class="row mb-4">
+        <div class="col-12 col-md-6">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_categoria">Categoría</label>
+                    {{ form.categoria }}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_descripcion">Descripción</label>
+                    {{ form.descripcion }}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_monto_meta">Monto Meta</label>
+                    {{ form.monto_meta }}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_fecha_establecida">Fecha Establecida</label>
+                    {{ form.fecha_establecida }}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_tipogasto">Tipo de Gasto</label>
+                    {{ form.tipogasto }}
+                </div>
+
+                <button type="submit" class="btn btn-success mt-4">Crear Obligación</button>
+                <a href="{% url 'obligacionesfinancieras' %}" class="btn btn-secondary mt-4">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

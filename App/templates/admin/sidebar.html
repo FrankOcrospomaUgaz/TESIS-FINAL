@@ -44,12 +44,13 @@
             </h5>
         <ul class="nav flex-column pt-3 pt-md-0">
 
-            <li class="nav-item {% if 'dashboard' in segment %} active {% endif %}">
-                <a href="{% url 'admin:index' %}" class="nav-link">
-                    <span class="sidebar-icon fa fa-home"></span>
-                    <span class="sidebar-text">{% trans 'Home' %}</span>
-                </a>
-            </li>
+          <li class="nav-item {% if 'dashboard' in segment %} active {% endif %}">
+    <a href="{% url 'admin:index' %}" class="nav-link">
+        <span class="sidebar-icon fa fa-home"></span>
+        <span class="sidebar-text">Dashboard</span>
+    </a>
+</li>
+
 
             <li class="nav-item">
                 <a href="{% url 'predecir' %}" class="nav-link d-flex align-items-center">
@@ -102,7 +103,12 @@
                                         {% endfor %}
                                         <li class="nav-item{% if 'bootstrap-tables' in segment or model.url in request.path|urlencode %} active {% endif %}">
                                             <a class="nav-link" href="/transacciones">
-                                              <span class="sidebar-text">Importar transacciones</span>
+                                              <span class="sidebar-text">Importar Transacciones</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item{% if 'bootstrap-tables' in segment or model.url in request.path|urlencode %} active {% endif %}">
+                                            <a class="nav-link" href="/obligacionesfinancieras">
+                                              <span class="sidebar-text">Gastos Financieros</span>
                                             </a>
                                         </li>
                                     </ul>

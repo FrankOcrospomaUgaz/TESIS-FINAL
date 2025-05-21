@@ -51,7 +51,7 @@ def rellenar_meses_vacios(usuario_id):
     usuario = User.objects.get(id=usuario_id)
     ventas_df = calcular_ventas_diarias(usuario)
 
-    if len(ventas_df) < 60:
+    if len(ventas_df) < 60:    
         print("❌ Se necesitan al menos 60 días de datos para el modelo.")
         return
 

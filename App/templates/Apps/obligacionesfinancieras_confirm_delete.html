@@ -1,0 +1,22 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+    <div class="container-fluid py-4">
+        <h2 class="text-center">Eliminar Obligación Financiera</h2>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="alert alert-danger">
+                <p>¿Estás seguro de que deseas eliminar esta obligación financiera?</p>
+                <p><strong>Categoría:</strong> {{ obligacion.categoria }}</p>
+                <p><strong>Descripción:</strong> {{ obligacion.descripcion }}</p>
+                <p><strong>Monto:</strong> {{ obligacion.monto_meta }}</p>
+                <p><strong>Fecha Establecida:</strong> {{ obligacion.fecha_establecida }}</p>
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-danger">Eliminar</button>
+                <a href="{% url 'obligacionesfinancieras' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+{% endblock content %}

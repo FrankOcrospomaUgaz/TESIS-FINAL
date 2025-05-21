@@ -1,0 +1,158 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid py-4">
+    <h2 class="text-center mb-4">Gastos Financieros</h2>
+
+    <!-- Contenedor para el filtro y el botón de importación -->
+    <div class="row mb-4">
+        <div class="col-12 col-md-6">
+            <label for="filter-month" class="form-label">Filtrar por Mes</label>
+            <select id="filter-month" class="form-select">
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-6 d-flex justify-content-end align-items-center">
+            <button id="import-obligaciones" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">Importar Obligaciones de Mes Anterior</button>
+        </div>
+    </div>
+
+    <!-- Botón para agregar nueva obligación -->
+    <div class="text-end mb-4">
+        <a href="{% url 'obligacion_create' %}" class="btn btn-primary btn-sm">Agregar Nueva Obligación</a>
+    </div>
+
+    <!-- Tabla para mostrar todas las obligaciones financieras dentro de un contenedor blanco con esquinas redondeadas -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="obligacionesTable" class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Categoría</th>
+                            <th>Descripción</th>
+                            <th>Monto Meta</th>
+                            <th>Fecha Establecida</th>
+                            <th>Tipo de Gasto</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for obligacion in obligaciones %}
+                        <tr data-month="{{ obligacion.fecha_establecida.month }}">
+                            <td>{{ obligacion.categoria }}</td>
+                            <td>{{ obligacion.descripcion }}</td>
+                            <td>{{ obligacion.monto_meta }}</td>
+                            <td>{{ obligacion.fecha_establecida }}</td>
+                            <td>{{ obligacion.get_tipogasto_display }}</td>
+                            
+                            <!-- Estado de la obligación (Cumplido o Pendiente) -->
+                            <td>
+                                {% if obligacion.cumplido %}
+                                    <span class="badge bg-success">Cumplido</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Botones de acción -->
+                            <td>
+                                <a href="{% url 'obligacion_edit' obligacion.id %}" class="btn btn-warning btn-sm">Editar</a>
+                                <a href="{% url 'obligacion_delete' obligacion.id %}" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar esta obligación?')">Eliminar</a>
+                                {% if not obligacion.cumplido %}
+                                    <a href="{% url 'mark_as_cumplido' obligacion.id %}" class="btn btn-success btn-sm">Marcar como Cumplido</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No hay obligaciones financieras registradas.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Incluir los archivos de DataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        var table = $('#obligacionesTable').DataTable({
+            "paging": true,
+            "pageLength": 50,
+            "lengthMenu": [10, 20, 50, 100, 500, 1000],
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "autoWidth": false,
+            "scrollX": true,
+            "language": {
+                "lengthMenu": "Mostrar _MENU_ obligaciones por página",
+                "zeroRecords": "No se encontraron resultados",
+                "info": "Mostrando página _PAGE_ de _PAGES_",
+                "infoEmpty": "No hay obligaciones disponibles",
+                "infoFiltered": "(filtrado de _MAX_ obligaciones totales)",
+                "search": "Buscar:",
+                "paginate": {
+                    "first": "Primero",
+                    "last": "Último",
+                    "next": "Siguiente",
+                    "previous": "Anterior"
+                }
+            }
+        });
+
+        // Establecer el mes actual en el selector
+        var currentMonth = new Date().getMonth() + 1;  // Mes actual (1-12)
+        $('#filter-month').val(currentMonth);  // Establecer el valor del selector al mes actual
+
+        // Filtrar la tabla automáticamente según el mes actual
+        table.rows().every(function() {
+            var row = $(this.node());
+            var month = row.data('month');
+            if (month != currentMonth) {
+                row.hide();  // Ocultar las filas que no correspondan al mes actual
+            } else {
+                row.show();  // Mostrar las filas del mes actual
+            }
+        });
+
+        // Filtrar por mes cuando el usuario cambie el selector
+        $('#filter-month').change(function() {
+            var selectedMonth = $(this).val();
+            table.rows().every(function() {
+                var row = $(this.node());
+                var month = row.data('month');
+                if (selectedMonth === 'all') {
+                    row.show();  // Mostrar todas las filas
+                } else if (month == selectedMonth) {
+                    row.show();  // Mostrar solo las filas correspondientes al mes seleccionado
+                } else {
+                    row.hide();  // Ocultar las filas que no corresponden al mes seleccionado
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock content %}

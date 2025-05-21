@@ -37,7 +37,7 @@ class MetaEgreso(models.Model):
     registrado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name_plural = "Obligaciones Financieras"
+        verbose_name_plural = "Gastos Financieras"
 
     def __str__(self):
         return f'Meta {self.id} - {self.monto_meta}'

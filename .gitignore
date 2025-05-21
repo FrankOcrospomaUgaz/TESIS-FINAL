@@ -30,7 +30,6 @@ develop-eggs/
 *.swp
 *.swo
 .idea/
-.vscode/
 *.DS_Store
 
 # Archivos de logs
@@ -38,3 +37,7 @@ develop-eggs/
 
 # Archivos temporales del sistema
 *.tmp
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
+branch_structure.json

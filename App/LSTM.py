@@ -77,9 +77,9 @@ def construir_modelo_lstm(input_shape):
     Construye y compila un modelo LSTM.
     """
     model = Sequential()
-    model.add(LSTM(units=50, return_sequences=True, input_shape=input_shape))
+    model.add(LSTM(units=150, return_sequences=True, input_shape=input_shape))
     model.add(Dropout(0.2))
-    model.add(LSTM(units=50, return_sequences=False))
+    model.add(LSTM(units=150, return_sequences=False))
     model.add(Dropout(0.2))
     model.add(Dense(units=25))
     model.add(Dense(units=1))
@@ -103,7 +103,7 @@ def entrenar_y_predecir_ventas_diarias(usuario):
     history = model.fit(
         X_train, y_train, 
         batch_size=64,
-        epochs=120,
+        epochs=50,
         shuffle=True,
         validation_split=0.2,
         verbose=0

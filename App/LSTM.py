@@ -8,7 +8,7 @@ from decimal import Decimal
 from django.db.models import Sum
 import numpy as np
 
-# Paso 1: Obtener y calcular las ventas diarias
+# Obtener y calcular las ventas diarias
 def calcular_ventas_diarias(usuario):
     """
     Agrupa las transacciones por fecha y calcula las ventas diarias.
@@ -27,7 +27,9 @@ def calcular_ventas_mensuales(usuario):
     Agrupa las transacciones por mes y calcula las ventas mensuales.
     """
     # Agrupar las transacciones por año y mes, sumando los montos
-    transacciones_mensuales = Transaccion.objects.filter(usuario=usuario).values('fecha_transaccion__year', 'fecha_transaccion__month') \
+    transacciones_mensuales = Transaccion.objects.filter(usuario=usuario).filter(
+        tipo_transaccion='Ingreso'  # Filtramos solo los ingresos o activos
+    ).values('fecha_transaccion__year', 'fecha_transaccion__month') \
         .annotate(ventas_mensuales=Sum('monto')) \
         .order_by('fecha_transaccion__year', 'fecha_transaccion__month')
 
@@ -49,7 +51,7 @@ def calcular_ventas_mensuales(usuario):
     return ventas_df
 
 
-# Paso 2: Preparar los datos para el modelo LSTM
+# Preparar los datos para el modelo LSTM
 def preparar_datos_ventas(ventas_df, sequence_length=60):
     """
     Prepara los datos de ventas diarias para el modelo LSTM.
@@ -65,11 +67,11 @@ def preparar_datos_ventas(ventas_df, sequence_length=60):
         y.append(ventas_scaled[i, 0])
 
     X, y = np.array(X), np.array(y)
-    X = np.reshape(X, (X.shape[0], X.shape[1], 1))  # Redimensionar para LSTM
+    X = np.reshape(X, (X.shape[0], X.shape[1], 1)) 
 
     return X, y, scaler
 
-# Paso 3: Construir el modelo LSTM
+# Construir el modelo LSTM
 def construir_modelo_lstm(input_shape):
     """
     Construye y compila un modelo LSTM.
@@ -84,60 +86,86 @@ def construir_modelo_lstm(input_shape):
 
     model.compile(optimizer='adam', loss='mean_squared_error')
     return model
-
-# Función principal para entrenar y predecir las ventas de mañana y del próximo mes
 def entrenar_y_predecir_ventas_diarias(usuario):
-    """
-    Entrena el modelo LSTM y predice las ventas diarias para mañana y las ventas acumuladas del próximo mes.
-    """
-    # Paso 1: Obtener las ventas diarias
+    from sklearn.metrics import mean_squared_error, mean_absolute_error
+
     ventas_df = calcular_ventas_diarias(usuario)
 
     if len(ventas_df) < 60:
-        raise ValueError("Se necesitan al menos 60 días de datos de ventas para entrenar el modelo.")
+        raise ValueError("Se necesitan al menos 60 días de datos para entrenar el modelo.")
 
-    # Paso 2: Preparar los datos para el modelo LSTM
     X, y, scaler = preparar_datos_ventas(ventas_df)
-
-    # Separar los datos de entrenamiento y prueba
-    split = int(0.8 * len(X))
+    split = int(0.5 * len(X))
     X_train, y_train = X[:split], y[:split]
     X_test, y_test = X[split:], y[split:]
 
-    # Paso 3: Construir y entrenar el modelo
     model = construir_modelo_lstm((X_train.shape[1], 1))
-    model.fit(X_train, y_train, batch_size=64, epochs=5)
+    history = model.fit(
+        X_train, y_train, 
+        batch_size=64,
+        epochs=120,
+        shuffle=True,
+        validation_split=0.2,
+        verbose=0
+    )
 
-    # Predecir las ventas para mañana
-    ultima_secuencia = X_test[-1]  # Usar la última secuencia para predecir el futuro
-    prediccion_scaled = model.predict(ultima_secuencia.reshape(1, X_test.shape[1], 1))
-    prediccion_ventas = scaler.inverse_transform(prediccion_scaled)
+    # Evaluación del modelo
+    y_pred_scaled = model.predict(X_test)
+    y_pred = scaler.inverse_transform(y_pred_scaled)
+    y_true = scaler.inverse_transform(y_test.reshape(-1, 1))
 
-    # Convertir de numpy.float32 a float y luego a Decimal
-    prediccion_ventas_float = float(prediccion_ventas[0][0])  # Convertir a float
-    prediccion_ventas_decimal = Decimal(prediccion_ventas_float).quantize(Decimal('0.01'))  # Redondear a dos decimales
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    mae = mean_absolute_error(y_true, y_pred)
 
-    # Predicción de las ventas acumuladas del próximo mes
-    prediccion_acumulada_proximo_mes = 0
+    # Evitar división por cero y valores atípicos extremadamente bajos
+    y_true_safe = np.where(y_true == 0, 1, y_true)
+    mape = np.mean(np.abs((y_true - y_pred) / y_true_safe)) * 100
+    precision = 100 - mape
+
+    print(f"[✔️] Precisión del modelo:")
+    print(f" - RMSE: {rmse:.2f}")
+    print(f" - MAE: {mae:.2f}")
+    print(f" - MAPE: {mape:.2f}%")
+    print(f" - Precisión estimada: {precision:.2f}%")
+
+
+    # Predicción de mañana
+    ultima_secuencia = X_test[-1]
+    prediccion_ventas = scaler.inverse_transform(model.predict(ultima_secuencia.reshape(1, X_test.shape[1], 1)))
+    prediccion_ventas_decimal = Decimal(float(prediccion_ventas[0][0])).quantize(Decimal('0.01'))
+    # Proyección de 6 meses (180 días)
+    predicciones_6_meses = []
     secuencia_actual = ultima_secuencia.copy()
+    acumulado_mes = 0
 
-    # Predecir las ventas para los próximos 30 días
-    for _ in range(30):
-        prediccion_scaled_mes = model.predict(secuencia_actual.reshape(1, X_test.shape[1], 1))
-        prediccion_ventas_mes = scaler.inverse_transform(prediccion_scaled_mes)
-        prediccion_ventas_float_mes = float(prediccion_ventas_mes[0][0])
-        prediccion_acumulada_proximo_mes += prediccion_ventas_float_mes
+    for i in range(180):
+        pred_scaled = model.predict(secuencia_actual.reshape(1, X_test.shape[1], 1))
+        pred = scaler.inverse_transform(pred_scaled)
+        valor_base = float(pred[0][0])
 
-        # Actualizar la secuencia para el siguiente día
+        # Introducir aleatoriedad controlada
+        valor_aleatorio = np.random.normal(loc=valor_base, scale=valor_base * 0.06)
+        valor_aleatorio = np.clip(valor_aleatorio, valor_base * 0.9, valor_base * 1.1)
+        valor_aleatorio = max(0, valor_aleatorio)
+
+        acumulado_mes += valor_aleatorio
+
+        # Reescalar para la siguiente iteración
+        valor_reescalado = scaler.transform([[valor_aleatorio]])
         secuencia_actual = np.roll(secuencia_actual, -1)
-        secuencia_actual[-1] = prediccion_scaled_mes
+        secuencia_actual[-1] = valor_reescalado
 
-    prediccion_acumulada_decimal = Decimal(prediccion_acumulada_proximo_mes).quantize(Decimal('0.01'))
+        # Cada 30 días guardamos el total de ese "mes"
+        if (i + 1) % 30 == 0:
+            predicciones_6_meses.append(round(acumulado_mes, 2))
+            predicciones_6_meses = [float(x) for x in predicciones_6_meses]
 
-    # Devolver la predicción de mañana y la acumulada del próximo mes
-    return prediccion_ventas_decimal, prediccion_acumulada_decimal
+            acumulado_mes = 0
 
+    # El primer mes proyectado será:
+    prediccion_acumulada_decimal = Decimal(predicciones_6_meses[0]).quantize(Decimal('0.01'))
 
+    return prediccion_ventas_decimal, prediccion_acumulada_decimal, predicciones_6_meses
 
 
 def evaluar_riesgo_financiero(monto, prediccion_ventas_diarias, prediccion_ventas_mensuales, obligaciones_pendientes, motivo, descripcion, ventas_df, fecha_gasto, es_en_cuotas=False, numero_cuotas=1):
@@ -151,7 +179,13 @@ def evaluar_riesgo_financiero(monto, prediccion_ventas_diarias, prediccion_venta
         monto_por_cuota = monto
 
     flujo_caja_proyectado = prediccion_ventas_mensuales - obligaciones_pendientes
-    indice_liquidez = flujo_caja_proyectado / obligaciones_pendientes if obligaciones_pendientes > 0 else float('inf')
+    activos_liquidos = Transaccion.objects.filter(
+        tipo_transaccion='Ingreso'
+    ).aggregate(total=Sum('monto'))['total'] or 0
+
+    pasivos_corrientes = obligaciones_pendientes
+
+    indice_liquidez = float(activos_liquidos) / float(pasivos_corrientes) if pasivos_corrientes > 0 else float('inf')
 
     # Otros Indicadores Financieros
     total_activos = Transaccion.objects.filter(
@@ -287,7 +321,7 @@ def evaluar_riesgo_financiero(monto, prediccion_ventas_diarias, prediccion_venta
 
     # Devolver las explicaciones y valores de los indicadores junto con la respuesta final
     return (respuesta_final, indice_endeudamiento, cobertura_intereses, roa, indice_solvencia,
-            explicacion_indice_endeudamiento, explicacion_cobertura_intereses, explicacion_roa, explicacion_indice_solvencia, gasto_viable)
+            explicacion_indice_endeudamiento, explicacion_cobertura_intereses, explicacion_roa, explicacion_indice_solvencia, gasto_viable, indice_liquidez)
 def calcular_temporada_baja(ventas_df, umbral_baja=0.8):
     """
     Calcula si el período actual es una temporada baja en comparación con el promedio histórico de ventas.

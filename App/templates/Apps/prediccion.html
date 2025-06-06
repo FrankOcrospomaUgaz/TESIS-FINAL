@@ -7,28 +7,35 @@
 
     <ul class="nav nav-tabs mb-4" id="prediction-tabs" role="tablist">
         <li class="nav-item">
-            <a class="nav-link {% if not prediccion_resultado %}active{% endif %}" id="predecir-tab" data-bs-toggle="tab" href="#predecir" role="tab" aria-controls="predecir" aria-selected="true">Predecir</a>
+            <a class="nav-link {% if not prediccion_resultado %}active{% endif %}" id="predecir-tab"
+                data-bs-toggle="tab" href="#predecir" role="tab" aria-controls="predecir"
+                aria-selected="true">Predecir</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link {% if prediccion_resultado %}active{% endif %}" id="resultados-tab" data-bs-toggle="tab" href="#resultados" role="tab" aria-controls="resultados" aria-selected="false">Resultados</a>
+            <a class="nav-link {% if prediccion_resultado %}active{% endif %}" id="resultados-tab" data-bs-toggle="tab"
+                href="#resultados" role="tab" aria-controls="resultados" aria-selected="false">Resultados</a>
         </li>
     </ul>
 
     <div class="tab-content" id="prediction-tabs-content">
         <!-- Pestaña Predecir -->
-        <div class="tab-pane fade {% if not prediccion_resultado %}show active{% endif %}" id="predecir" role="tabpanel" aria-labelledby="predecir-tab">
+        <div class="tab-pane fade {% if not prediccion_resultado %}show active{% endif %}" id="predecir" role="tabpanel"
+            aria-labelledby="predecir-tab">
             <h5>Indique el gasto que desea realizar:</h5>
             <form id="form-prediccion" method="POST" action="{% url 'predecir' %}">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="monto" class="form-label">Monto:</label>
-                    <input type="number" class="form-control" id="monto" name="monto" placeholder="S/.0" min="0" step="0.01" required>
+                    <input type="number" class="form-control" id="monto" name="monto" placeholder="S/.0" min="0"
+                        step="0.01" required>
                 </div>
-                
+
 
                 <div class="mb-3">
                     <label for="fecha" class="form-label">Fecha:</label>
-                    <input type="date" class="form-control" id="fecha" name="fecha" value="{{ fecha_hoy }}">
+                    <input type="date" class="form-control" id="fecha" name="fecha" value="{{ fecha_hoy }}"
+                        min="{{ fecha_hoy }}">
+
                 </div>
 
                 <div class="mb-3">
@@ -51,33 +58,39 @@
 
                 <div class="mb-3" id="campo-cuotas" style="display: none;">
                     <label for="numero_cuotas" class="form-label">Número de cuotas:</label>
-                    <input type="number" class="form-control" id="numero_cuotas" name="numero_cuotas" placeholder="Número de cuotas" min="0" step="0.01">
+                    <input type="number" class="form-control" id="numero_cuotas" name="numero_cuotas"
+                        placeholder="Número de cuotas" min="0" step="0.01">
                 </div>
 
                 <div class="mb-3">
                     <label for="descripcion" class="form-label">Descripción:</label>
-                    <textarea class="form-control" id="descripcion" name="descripcion" placeholder="Descripción..."></textarea>
+                    <textarea class="form-control" id="descripcion" name="descripcion" placeholder="Descripción..."
+                        required></textarea>
                 </div>
 
                 <div class="d-flex justify-content-between">
-                    <button type="submit" name="action" value="actualizar" class="btn btn-primary">Actualizar data</button>
-                    <button type="submit" name="action" value="predecir" class="btn btn-success" style="color: white">Predecir riesgo</button>
+                    <button type="submit" name="action" value="actualizar" class="btn btn-primary">Actualizar
+                        data</button>
+                        <button type="button" id="btn-predecir" class="btn btn-success" style="color: white">Predecir riesgo</button>
+
                     <button type="reset" class="btn btn-secondary">Cancelar</button>
                 </div>
             </form>
         </div>
 
         <!-- Pestaña Resultados -->
-        <div class="tab-pane fade {% if prediccion_resultado %}show active{% endif %}" id="resultados" role="tabpanel" aria-labelledby="resultados-tab">
+        <div class="tab-pane fade {% if prediccion_resultado %}show active{% endif %}" id="resultados" role="tabpanel"
+            aria-labelledby="resultados-tab">
             <div class="container-fluid py-4">
                 <div class="alert alert-info" role="alert">
                     <h4>Resultado de la Predicción</h4>
                     <p>{{ respuesta }}</p>
-                    
+
                     <!-- Datos ocultos para utilizar en los gráficos -->
                     <p id="resultado-monto" data-monto="{{ monto }}" style="display: none;">Monto: S/.{{ monto }}</p>
                     <p id="resultado-fecha" data-fecha="{{ fecha }}" style="display: none;">Fecha: {{ fecha }}</p>
-                    <p id="resultado-descripcion" data-descripcion="{{ descripcion }}" style="display: none;">Descripción: {{ descripcion }}</p>
+                    <p id="resultado-descripcion" data-descripcion="{{ descripcion }}" style="display: none;">
+                        Descripción: {{ descripcion }}</p>
 
                     <h5><strong>Predicción de Ventas para el Próximo Mes</strong></h5>
                     <button class="btn btn-info" id="ver-grafico-ventas">Ver gráfico de ventas</button>
@@ -87,55 +100,65 @@
 
                     <!-- Botones para abrir gráficos -->
                     <h5>
-                        <i class="fas fa-question-circle" data-bs-toggle="tooltip" title="El Índice de Liquidez mide la capacidad de tu negocio para cubrir sus obligaciones a corto plazo."></i>
+                        <i class="fas fa-question-circle" data-bs-toggle="tooltip"
+                            title="El Índice de Liquidez mide la capacidad de tu negocio para cubrir sus obligaciones a corto plazo."></i>
                         <strong>Índice de Liquidez</strong>
-                        {% comment %} <button class="btn btn-info open-chart" data-chart="liquidez">Ver gráfico</button> {% endcomment %}
+                        {% comment %} <button class="btn btn-info open-chart" data-chart="liquidez">Ver gráfico</button>
+                        {% endcomment %}
                     </h5>
 
                     <p>{{ explicacion_indice_liquidez }}</p>
 
                     <h5>
-                        <i class="fas fa-question-circle" data-bs-toggle="tooltip" title="El Flujo de Caja Proyectado es la cantidad de efectivo que se espera que entre y salga del negocio en un futuro próximo."></i>
+                        <i class="fas fa-question-circle" data-bs-toggle="tooltip"
+                            title="El Flujo de Caja Proyectado es la cantidad de efectivo que se espera que entre y salga del negocio en un futuro próximo."></i>
                         <strong>Flujo de Caja Proyectado</strong>
                         <button class="btn btn-info open-chart" data-chart="flujo">Ver gráfico</button>
                     </h5>
                     <p>{{ explicacion_flujo_caja }}</p>
 
                     <h5>
-                        <i class="fas fa-question-circle" data-bs-toggle="tooltip" title="El Índice de Endeudamiento indica qué tan apalancado está el negocio en función de sus deudas respecto a sus activos."></i>
-                        <strong>Índice de Endeudamiento</strong> 
+                        <i class="fas fa-question-circle" data-bs-toggle="tooltip"
+                            title="El Índice de Endeudamiento indica qué tan apalancado está el negocio en función de sus deudas respecto a sus activos."></i>
+                        <strong>Índice de Endeudamiento</strong>
                     </h5>
                     <p>{{ explicacion_indice_endeudamiento }}</p>
 
                     <h5>
-                        <i class="fas fa-question-circle" data-bs-toggle="tooltip" title="La Cobertura de Intereses muestra la capacidad del negocio para pagar los intereses de su deuda."></i>
-                        <strong>Cobertura de Intereses</strong> 
+                        <i class="fas fa-question-circle" data-bs-toggle="tooltip"
+                            title="La Cobertura de Intereses muestra la capacidad del negocio para pagar los intereses de su deuda."></i>
+                        <strong>Cobertura de Intereses</strong>
                         <button class="btn btn-info open-chart" data-chart="cobertura">Ver gráfico</button>
                     </h5>
                     <p>{{ explicacion_cobertura_intereses }}</p>
 
                     {% if mostrar_roa %}
                     <h5>
-                        <i class="fas fa-question-circle" data-bs-toggle="tooltip" title="El ROA mide qué tan eficientemente se están utilizando los activos para generar ganancias."></i>
-                        <strong>Rentabilidad del Activo (ROA)</strong> 
-                        {% comment %} <button class="btn btn-info open-chart" data-chart="roa">Ver gráfico</button> {% endcomment %}
+                        <i class="fas fa-question-circle" data-bs-toggle="tooltip"
+                            title="El ROA mide qué tan eficientemente se están utilizando los activos para generar ganancias."></i>
+                        <strong>Rentabilidad del Activo (ROA)</strong>
+                        {% comment %} <button class="btn btn-info open-chart" data-chart="roa">Ver gráfico</button> {%endcomment %}
                     </h5>
                     <p>{{ explicacion_roa }}</p>
                     {% endif %}
 
-                    <h5>
-                        <i class="fas fa-question-circle" data-bs-toggle="tooltip" title="El Índice de Solvencia mide la capacidad de la empresa para cumplir con sus obligaciones a largo plazo."></i>
-                        <strong>Índice de Solvencia</strong> 
-                        </h5>
-                    <p>{{ explicacion_indice_solvencia }}</p>
+                    <!-- <h5>
+                        <i class="fas fa-question-circle" data-bs-toggle="tooltip"
+                            title="El Índice de Solvencia mide la capacidad de la empresa para cumplir con sus obligaciones a largo plazo."></i>
+                        <strong>Índice de Solvencia</strong>
+                    </h5>
+                    <p>{{ explicacion_indice_solvencia }}</p> -->
                 </div>
 
                 <div class="d-flex justify-content-between">
-                    <a href="#" id="nueva-prediccion-btn" class="btn btn-success mb-3" style="width: 100%; max-width: 300px; color: white;">Nueva predicción</a>
+                    <a href="#" id="nueva-prediccion-btn" class="btn btn-success mb-3"
+                        style="width: 100%; max-width: 300px; color: white;">Nueva predicción</a>
                     {% if gasto_viable %}
-                    <button id="registrar-gasto-btn" class="btn btn-danger mb-3" style="width: 100%; max-width: 300px;">Registrar Gasto</button>
+                    <button id="registrar-gasto-btn" class="btn btn-danger mb-3"
+                        style="width: 100%; max-width: 300px;">Registrar Gasto</button>
                     {% else %}
-                    <button id="registrar-gasto-btn" class="btn btn-danger mb-3" style="width: 100%; max-width: 300px;" disabled>No es posible registrar el gasto</button>
+                    <button id="registrar-gasto-btn" class="btn btn-danger mb-3" style="width: 100%; max-width: 300px;"
+                        disabled>No es posible registrar el gasto</button>
                     {% endif %}
                 </div>
             </div>
@@ -144,20 +167,23 @@
 </div>
 
 <!-- Modal de carga -->
-<div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true">
+<div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-body text-center">
                 <h5>Cargando, por favor espere...</h5>
                 <div class="progress">
-                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+                        role="progressbar" style="width: 100%"></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 <!-- Modal de Error (Monto Insuficiente) -->
-<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
+<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-body text-center">
@@ -169,22 +195,25 @@
     </div>
 </div>
 <!-- Modal de Gráfico -->
-<div class="modal fade" id="chartModal" tabindex="-1" role="dialog" aria-labelledby="chartModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+<div class="modal fade" id="chartModal" tabindex="-1" role="dialog" aria-labelledby="chartModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="chartModalLabel">Gráfico</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center">
-                <canvas id="chartCanvas"></canvas>
+                <canvas id="chartCanvas" width="1000" height="400"></canvas>
             </div>
         </div>
     </div>
 </div>
 <!-- Modal de Éxito (Registro exitoso) -->
-<div class="modal fade" id="registroExitoModal" tabindex="-1" role="dialog" aria-labelledby="registroExitoModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+<div class="modal fade" id="registroExitoModal" tabindex="-1" role="dialog" aria-labelledby="registroExitoModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-body text-center">
                 <h5 class="text-success">¡Registro Exitoso!</h5>
@@ -195,113 +224,125 @@
     </div>
 </div>
 
+<!-- Modal de Error (Monto Insuficiente) -->
+<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <h5 class="text-danger">¡Error!</h5>
+                <p class="text-danger">El monto a gastar debe ser como mínimo 500 soles para realizar la predicción.</p>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- Modal de Error (Formulario Incompleto) -->
+<div class="modal fade" id="formularioIncompletoModal" tabindex="-1" role="dialog"
+    aria-labelledby="formularioIncompletoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <h5 class="text-danger">¡Error!</h5>
+                <div id="errores-validacion" class="text-danger"></div>
+
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const formPrediccion = document.getElementById('form-prediccion');
-        const montoInput = document.getElementById('monto');
-        const errorModal = new bootstrap.Modal(document.getElementById('errorModal')); // Modal de error
-    
-        formPrediccion.addEventListener('submit', function(event) {
-            // Obtener el monto del input
-            const monto = parseFloat(montoInput.value);
-    
-            // Verificar si el monto es menor a 500
-            if (monto < 500) {
-                event.preventDefault(); // Evitar el envío del formulario
-                errorModal.show(); // Mostrar el modal de error
-            }
-        });
-    });
+  
 
     let currentChart = null;  // Variable global para almacenar el gráfico actual
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Llamada a los gráficos al hacer clic en los botones
-        document.querySelectorAll('.open-chart').forEach(function(button) {
-            button.addEventListener('click', function() {
+        document.querySelectorAll('.open-chart').forEach(function (button) {
+            button.addEventListener('click', function () {
                 var chartType = this.getAttribute('data-chart');
                 openChartModal(chartType);
             });
         });
-    
+
         // Función para abrir el modal con el gráfico correspondiente
         function openChartModal(chartType) {
             var chartData, chartLabels;
-            
+
             // Datos y etiquetas para cada gráfico
-            switch(chartType) {
+            switch (chartType) {
                 case 'liquidez':
-                    chartData = [{{ indice_liquidez }}]; 
-                    chartLabels = ['Índice de Liquidez'];
-                    break;
+                    chartData = [{{ indice_liquidez }}];
+            chartLabels = ['Índice de Liquidez'];
+            break;
                 case 'flujo':
-                    chartData = [{{ flujo_caja_proyectado }}]; 
-                    chartLabels = ['Flujo de Caja'];
-                    break;
+            chartData = [{{ flujo_caja_proyectado }}];
+        chartLabels = ['Flujo de Caja'];
+        break;
                 case 'endeudamiento':
-                    chartData = [{{ indice_endeudamiento }}]; 
-                    chartLabels = ['Índice de Endeudamiento'];
-                    break;
+        chartData = [{{ indice_endeudamiento }}];
+    chartLabels = ['Índice de Endeudamiento'];
+    break;
                 case 'cobertura':
-                    chartData = [{{ cobertura_intereses }}]; 
-                    chartLabels = ['Cobertura de Intereses'];
-                    break;
+    chartData = [{{ cobertura_intereses }}];
+    chartLabels = ['Cobertura de Intereses'];
+    break;
                 case 'roa':
-                    chartData = [{{ roa }}];
-                    chartLabels = ['Rentabilidad del Activo (ROA)'];
-                    break;
+    chartData = [{{ roa }}];
+    chartLabels = ['Rentabilidad del Activo (ROA)'];
+    break;
                 case 'solvencia':
-                    chartData = [{{ indice_solvencia }}]; 
-                    chartLabels = ['Índice de Solvencia'];
-                    break;
+    chartData = [{{ indice_solvencia }}];
+    chartLabels = ['Índice de Solvencia'];
+    break;
                 default:
-                    chartData = [0];
-                    chartLabels = ['No disponible'];
-                    break;
+    chartData = [0];
+    chartLabels = ['No disponible'];
+    break;
             }
-    
-            // Si ya existe un gráfico, destruirlo
-            if (currentChart) {
-                currentChart.destroy();  // Destruye el gráfico anterior
-            }
-    
-            // Crear nuevo gráfico
-            const ctx = document.getElementById('chartCanvas').getContext('2d');
-            currentChart = new Chart(ctx, {
-                type: 'bar',  // Tipo de gráfico (puede ser 'line', 'bar', etc.)
-                data: {
-                    labels: chartLabels,
-                    datasets: [{
-                        label: 'Predicción de valores',
-                        data: chartData,
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }]
+
+    // Si ya existe un gráfico, destruirlo
+    if (currentChart) {
+        currentChart.destroy();  // Destruye el gráfico anterior
+    }
+
+    // Crear nuevo gráfico
+    const ctx = document.getElementById('chartCanvas').getContext('2d');
+    currentChart = new Chart(ctx, {
+        type: 'bar',  // Tipo de gráfico (puede ser 'line', 'bar', etc.)
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Predicción de valores',
+                data: chartData,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Valor: ' + context.raw;
-                                }
-                            }
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return 'Valor: ' + context.raw;
                         }
                     }
                 }
-            });
-    
-            // Mostrar el modal con el gráfico
-            var chartModal = new bootstrap.Modal(document.getElementById('chartModal'));
-            chartModal.show();
+            }
+        }
+    });
+
+    // Mostrar el modal con el gráfico
+    var chartModal = new bootstrap.Modal(document.getElementById('chartModal'));
+    chartModal.show();
         }
     });
 </script>
@@ -315,107 +356,102 @@
         });
 
         function openVentasChart() {
-            const ventas_anteriores = {{ ventas_anteriores | safe }};
-            const fechas_ventas = {{ fechas_ventas | safe }};
-            const prediccion_ventas = {{ prediccion_ventas_mensuales | safe }}; // Agregar el valor de la predicción
+    const ventas_anteriores = {{ ventas_anteriores | safe }};
+    const fechas_ventas = {{ fechas_ventas | safe }};
+    const predicciones_6_meses = {{ predicciones_6_meses | safe }};  // Nueva lista de 6 valores predichos
 
-            console.log('Ventas anteriores:', ventas_anteriores);
-            console.log('Fechas de ventas:', fechas_ventas);
-            console.log('Predicción de ventas para el próximo mes:', prediccion_ventas);
+    const ventasNumericas = ventas_anteriores.map(venta => parseFloat(venta));
+    const prediccionNumerica = predicciones_6_meses.map(v => parseFloat(v));
+    
+    if (ventasNumericas.length === 0 || fechas_ventas.length === 0 || prediccionNumerica.length === 0) {
+        alert('No hay datos disponibles para mostrar en el gráfico.');
+        return;
+    }
 
-            // Asegurarse de que las ventas sean números
-            const ventasNumericas = ventas_anteriores.map(venta => parseFloat(venta));
+    // Generar etiquetas futuras
+    const hoy = new Date();
+    const mesesFuturos = Array.from({length: 6}, (_, i) => {
+        const fecha = new Date(hoy.getFullYear(), hoy.getMonth() + i + 1, 1);
+        return fecha.toLocaleString('default', { month: 'short', year: 'numeric' });
+    });
 
-            // Verificar si hay datos
-            if (!ventasNumericas || ventasNumericas.length === 0 || fechas_ventas.length === 0) {
-                alert('No hay datos disponibles para mostrar en el gráfico de ventas.');
-                return;
-            }
+    const todasEtiquetas = [...fechas_ventas, ...mesesFuturos];
 
-            // Agregar la predicción de ventas para el próximo mes al final del array
-            const prediccionNumerica = parseFloat(prediccion_ventas);
+    if (currentChart) {
+        currentChart.destroy();
+    }
 
-            // Verificar si la predicción es un número
-            if (isNaN(prediccionNumerica)) {
-                alert('La predicción de ventas no es válida.');
-                return;
-            }
-
-            if (currentChart) {
-                currentChart.destroy(); // Destruir el gráfico anterior si existe
-            }
-
-            const ctx = document.getElementById('chartCanvas').getContext('2d');
-            currentChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [...fechas_ventas, 'Próximo mes'],  // Añadir "Próximo mes" como la última etiqueta
-                    datasets: [
-                        {
-                            label: 'Ventas Anteriores',
-                            data: [...ventasNumericas, null],  // Usar los datos de ventas anteriores, agregando un valor null para el próximo mes
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Predicción de Ventas',
-                            data: [...Array(ventasNumericas.length).fill(null), prediccionNumerica],  // Datos de predicción al final
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',  // Color diferente para la predicción
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            borderWidth: 1,
-                            fill: true  // Rellenar área debajo de la predicción
-                        }
-                    ]
+    const ctx = document.getElementById('chartCanvas').getContext('2d');
+    currentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: todasEtiquetas,
+            datasets: [
+                {
+                    label: 'Ventas Históricas',
+                    data: [...ventasNumericas, ...Array(6).fill(null)],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderWidth: 2,
+                    tension: 0.3
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Valor: ' + context.raw;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Monto (S/.)'
-                            }
+                {
+                    label: 'Proyección 6 Meses',
+                    data: [...Array(ventasNumericas.length).fill(null), ...prediccionNumerica],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderDash: [5, 5],
+                    borderWidth: 2,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `S/. ${context.raw}`;
                         }
                     }
+                },
+                legend: {
+                    position: 'top'
                 }
-            });
-
-            // Mostrar el modal con el gráfico
-            var chartModal = new bootstrap.Modal(document.getElementById('chartModal'));
-            chartModal.show();
+            },
+            scales: {
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Ventas en S/.'
+                    },
+                    beginAtZero: true
+                }
+            }
         }
+    });
+
+    new bootstrap.Modal(document.getElementById('chartModal')).show();
+}
+
     });
 </script>
 
-
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const esEnCuotasCheckbox = document.getElementById('es_en_cuotas');
         const campoCuotas = document.getElementById('campo-cuotas');
-        
+
         // Comprobar el estado inicial del checkbox
         if (esEnCuotasCheckbox.checked) {
             campoCuotas.style.display = 'block';
         } else {
             campoCuotas.style.display = 'none';
         }
-    
+
         // Mostrar/ocultar el campo de cuotas cuando se seleccione/deseleccione el checkbox
-        esEnCuotasCheckbox.addEventListener('change', function() {
+        esEnCuotasCheckbox.addEventListener('change', function () {
             if (this.checked) {
                 campoCuotas.style.display = 'block';
             } else {
@@ -423,8 +459,8 @@
             }
         });
     });
-    
-    document.addEventListener('DOMContentLoaded', function() {
+
+    document.addEventListener('DOMContentLoaded', function () {
         const esEnCuotasCheckbox = document.getElementById('es_en_cuotas');
         const campoCuotas = document.getElementById('campo-cuotas');
         const formPrediccion = document.getElementById('form-prediccion');
@@ -433,60 +469,114 @@
         const registrarGastoBtn = document.getElementById('registrar-gasto-btn');
         const registroExitoModal = new bootstrap.Modal(document.getElementById('registroExitoModal'));
         const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-    
+
         // Mostrar/ocultar el campo de cuotas cuando se seleccione/deseleccione el checkbox
-        esEnCuotasCheckbox.addEventListener('change', function() {
+        esEnCuotasCheckbox.addEventListener('change', function () {
             if (this.checked) {
                 campoCuotas.style.display = 'block';  // Mostrar el campo
             } else {
                 campoCuotas.style.display = 'none';  // Ocultar el campo
             }
         });
-    
-        // Mostrar el modal de carga al hacer clic en el botón "Predecir riesgo"
-        const predecirRiesgoBtn = document.querySelector('button[name="action"][value="predecir"]');
-        predecirRiesgoBtn.addEventListener('click', function(event) {
-            event.preventDefault();  // Prevenir el envío del formulario por defecto
-    
-            loadingModal.show();  // Mostrar el modal de carga
-    
-            // Simulación de proceso de predicción (esto debería ser reemplazado por la lógica real)
-            setTimeout(function() {
-    
-                formPrediccion.submit();  // Aquí se enviaría el formulario
-            }, 30);  
-            loadingModal.hide();  // Ocultar el modal de carga
 
-        });
+        // Mostrar el modal de carga al hacer clic en el botón "Predecir riesgo"
+        const predecirRiesgoBtn = document.getElementById('btn-predecir');
+        predecirRiesgoBtn.addEventListener('click', function (event) {
+            event.preventDefault();  // Detener envío
+
+            const monto = parseFloat(document.getElementById('monto').value);
+            const descripcion = document.getElementById('descripcion').value.trim();
+            const formularioIncompletoModal = new bootstrap.Modal(document.getElementById('formularioIncompletoModal'));
+
+// Validación personalizada
+const cuotasMarcado = esEnCuotasCheckbox.checked;
+const numeroCuotas = document.getElementById('numero_cuotas').value;
+
+const numeroCuotasInput = document.getElementById('numero_cuotas');
+const numeroCuotasValor = numeroCuotasInput.value;
+let errorDetectado = false;
+let mensajes = [];
+
+if (isNaN(monto)) {
+    mensajes.push("El monto ingresado no es un número válido.");
+    console.log("❌ Error: El monto no es un número.");
+    errorDetectado = true;
+} else if (monto < 500) {
+    mensajes.push("El monto debe ser como mínimo 500 soles.");
+    console.log("❌ Error: El monto debe ser mayor o igual a 500. Monto actual:", monto);
+    errorDetectado = true;
+}
+
+if (descripcion === '') {
+    mensajes.push("La descripción no puede estar vacía.");
+    console.log("❌ Error: La descripción está vacía.");
+    errorDetectado = true;
+}
+
+if (cuotasMarcado) {
+    if (numeroCuotasValor.trim() === '') {
+        mensajes.push("Debe indicar el número de cuotas.");
+        console.log("❌ Error: El número de cuotas está vacío.");
+        errorDetectado = true;
+    } else if (parseFloat(numeroCuotasValor) <= 0) {
+        mensajes.push("El número de cuotas debe ser mayor que 0.");
+        console.log("❌ Error: El número de cuotas debe ser mayor a 0. Valor actual:", numeroCuotasValor);
+        errorDetectado = true;
+    }
+}
+
+if (errorDetectado) {
+    console.log("⚠️ Validación fallida. No se puede continuar.");
+
+    // Mostrar los errores en el modal
+    const erroresDiv = document.getElementById('errores-validacion');
+    erroresDiv.innerHTML = mensajes.map(msg => `<p>• ${msg}</p>`).join('');
     
+    const formularioIncompletoModal = new bootstrap.Modal(document.getElementById('formularioIncompletoModal'));
+    formularioIncompletoModal.show();
+    
+    formPrediccion.classList.add('was-validated');
+    return;
+}
+
+
+
+
+            // Si todo está bien, mostrar el modal de carga y enviar
+            loadingModal.show();
+            setTimeout(function () {
+                formPrediccion.submit();
+            }, 50);
+        });
+
         // Habilitar tooltips de Bootstrap
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-    
+
         // Función para registrar el gasto
-        registrarGastoBtn.addEventListener('click', function(event) {
+        registrarGastoBtn.addEventListener('click', function (event) {
             event.preventDefault(); // Prevenir la recarga de la página
-    
+
             // Verificar si la URL 'registrar_gasto' es válida
             const urlRegistrarGasto = "{% url 'registrar_gasto' %}";
-    
+
             if (!urlRegistrarGasto) {
                 console.error('La URL para registrar el gasto no se encuentra.');
                 return;
             }
-    
+
             // Recopilar los datos del formulario de predicción
             const monto = document.getElementById('resultado-monto').getAttribute('data-monto');
             const fecha = document.getElementById('resultado-fecha').getAttribute('data-fecha');
             const descripcion = document.getElementById('resultado-descripcion').getAttribute('data-descripcion');
-    
+
             if (!monto || !fecha || !descripcion) {
                 console.error('Faltan datos para registrar el gasto.');
                 return;
             }
-    
+
             // Realizar la solicitud AJAX
             fetch(urlRegistrarGasto, {
                 method: 'POST',
@@ -500,33 +590,63 @@
                     fecha: fecha
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Mostrar modal de éxito
-                    registroExitoModal.show();
-                    
-                    // Deshabilitar el botón de registrar gasto
-                    document.getElementById("registrar-gasto-btn").disabled = true;
-                } else {
-                    alert('Error al registrar el gasto: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error al registrar el gasto: ', error);
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Mostrar modal de éxito
+                        registroExitoModal.show();
+
+                        // Deshabilitar el botón de registrar gasto
+                        document.getElementById("registrar-gasto-btn").disabled = true;
+                    } else {
+                        alert('Error al registrar el gasto: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al registrar el gasto: ', error);
+                });
         });
     });
-    
-    
 
 
-    
-    
+
+
+
+
 </script>
 <script>
-    document.getElementById('nueva-prediccion-btn').addEventListener('click', function() {
+    document.getElementById('nueva-prediccion-btn').addEventListener('click', function () {
         document.getElementById('predecir-tab').click();
     });
 </script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkboxCuotas = document.getElementById('es_en_cuotas');
+    const campoCuotas = document.getElementById('campo-cuotas');
+    const inputCuotas = document.getElementById('numero_cuotas');
+
+    // Al cargar la página: mostrar/ocultar y setear "required"
+    if (checkboxCuotas.checked) {
+        campoCuotas.style.display = 'block';
+        inputCuotas.required = true;
+    } else {
+        campoCuotas.style.display = 'none';
+        inputCuotas.required = false;
+    }
+
+    // Cuando el usuario cambia el checkbox
+    checkboxCuotas.addEventListener('change', function () {
+        if (this.checked) {
+            campoCuotas.style.display = 'block';
+            inputCuotas.required = true;
+        } else {
+            campoCuotas.style.display = 'none';
+            inputCuotas.required = false;
+        }
+    });
+    });
+</script>
+
 {% endblock content %}

@@ -33,9 +33,9 @@ class CategoriaGastoAdmin(admin.ModelAdmin):
 
 @admin.register(PrediccionFinanciera)
 class PrediccionFinancieraAdmin(admin.ModelAdmin):
-    list_display = ['usuario', 'categoria', 'prediccion_monto', 'fecha_prediccion', 'generado_en']
+    list_display = ['usuario', 'prediccion_monto', 'fecha_prediccion', 'generado_en']
     ordering = ['fecha_prediccion']
-    search_fields = ['usuario__username', 'usuario__first_name', 'usuario__last_name', 'categoria__nombre_categoria']
+    search_fields = ['usuario__username', 'usuario__first_name', 'usuario__last_name']
     list_per_page = 5
     class Media:
         js = ('https://code.jquery.com/jquery-3.6.4.min.js', 'assets/js/control_botones.js', 'assets/js/editar_botones.js',)

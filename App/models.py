@@ -22,22 +22,30 @@ class Transaccion(models.Model):
 
 
 class MetaEgreso(models.Model):
+    TIPO_GASTO_CHOICES = [
+        ('F', 'Fijo'),
+        ('V', 'Variable'),
+    ]
+
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)  # Se usa el modelo User de Django
     categoria = models.ForeignKey(CategoriaGasto, on_delete=models.CASCADE)
     descripcion = models.TextField()
     monto_meta = models.DecimalField(max_digits=12, decimal_places=2)
     fecha_establecida = models.DateField()
+    tipogasto = models.CharField(max_length=1, choices=TIPO_GASTO_CHOICES, default='V')
     cumplido = models.BooleanField(default=False)
     registrado_en = models.DateTimeField(auto_now_add=True)
+
     class Meta:
-        verbose_name_plural = "Obligaciones Financieras" 
+        verbose_name_plural = "Obligaciones Financieras"
+
     def __str__(self):
         return f'Meta {self.id} - {self.monto_meta}'
 
 
+
 class PrediccionFinanciera(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
-    categoria = models.ForeignKey(CategoriaGasto, on_delete=models.CASCADE, null=True, blank=True)  # Para permitir valores None
     prediccion_monto = models.DecimalField(max_digits=12, decimal_places=2)
     fecha_prediccion = models.DateField()
     generado_en = models.DateTimeField(auto_now_add=True)

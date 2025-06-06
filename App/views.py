@@ -12,6 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from .forms import ExcelUploadForm
 from django.contrib import messages
+from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
 
 
 def predecir_view(request):
@@ -37,7 +38,7 @@ def predecir_view(request):
 
             # Paso 1: Obtener predicciones y ventas diarias
             ventas_df = calcular_ventas_diarias(usuario)
-            prediccion_ventas_diarias, prediccion_ventas_mensuales = entrenar_y_predecir_ventas_diarias(usuario)
+            prediccion_ventas_diarias, prediccion_ventas_mensuales, predicciones_6_meses = entrenar_y_predecir_ventas_diarias(usuario)
 
             # Paso 2: Obtener ventas mensuales (para las variables requeridas)
             ventas_mensuales_df = calcular_ventas_mensuales(usuario)
@@ -56,22 +57,19 @@ def predecir_view(request):
             # Calcular flujo de caja proyectado como float
             flujo_caja_proyectado = float(prediccion_ventas_mensuales) - float(obligaciones_pendientes)
 
-            # Calcular índice de liquidez
-            if obligaciones_pendientes > 0:
-                indice_liquidez = flujo_caja_proyectado / float(obligaciones_pendientes)
-            else:
-                indice_liquidez = float('inf')
 
-            # Generar explicaciones detalladas del análisis financiero
+
+            # Evaluar el riesgo financiero y obtener recomendaciones y explicaciones
+            (respuesta, indice_endeudamiento, cobertura_intereses, roa, indice_solvencia,
+             explicacion_indice_endeudamiento, explicacion_cobertura_intereses, explicacion_roa, explicacion_indice_solvencia, gasto_viable, indice_liquidez) = evaluar_riesgo_financiero(
+                monto, prediccion_ventas_diarias, prediccion_ventas_mensuales, obligaciones_pendientes, motivo, descripcion, ventas_df, fecha_gasto, es_en_cuotas, numero_cuotas,
+            )
+             
+                         # Generar explicaciones detalladas del análisis financiero
             explicacion_indice_liquidez, explicacion_flujo_caja = analizar_resultados_financieros(
                 flujo_caja_proyectado, indice_liquidez, monto, descripcion
             )
 
-            # Evaluar el riesgo financiero y obtener recomendaciones y explicaciones
-            (respuesta, indice_endeudamiento, cobertura_intereses, roa, indice_solvencia,
-             explicacion_indice_endeudamiento, explicacion_cobertura_intereses, explicacion_roa, explicacion_indice_solvencia, gasto_viable) = evaluar_riesgo_financiero(
-                monto, prediccion_ventas_diarias, prediccion_ventas_mensuales, obligaciones_pendientes, motivo, descripcion, ventas_df, fecha_gasto, es_en_cuotas, numero_cuotas
-            )
 
             # Definir los datos para los gráficos (métricas clave)
             metrica_labels = ['Ventas Mensuales', 'Índice de Liquidez', 'Flujo de Caja', 
@@ -85,6 +83,7 @@ def predecir_view(request):
             # Determinar si se debe mostrar el ROA
             mostrar_roa = motivo in ['Inversión', 'Marketing']
 
+            
             # Renderizar respuesta con los valores formateados
             return render(request, 'Apps/prediccion.html', {
                 'respuesta': respuesta,
@@ -116,6 +115,8 @@ def predecir_view(request):
                 'cobertura_intereses': cobertura_intereses,
                 'roa': roa,
                 'indice_solvencia': indice_solvencia,
+                'predicciones_6_meses': predicciones_6_meses,
+
             })
 
 
@@ -179,10 +180,14 @@ def obtener_ventas_totales(request):
 
     # Obtener ventas del mes actual
     mes_actual = datetime.now().month
-    ventas_mes_actual = Transaccion.objects.filter(fecha_transaccion__month=mes_actual).aggregate(total=Sum('monto'))['total'] or 0
+    ventas_mes_actual = Transaccion.objects.filter(fecha_transaccion__month=mes_actual).filter(
+        tipo_transaccion='Ingreso'  # Filtramos solo los ingresos o activos
+    ).aggregate(total=Sum('monto'))['total'] or 0
 
     # Obtener la fecha del último día registrado y las ventas de ese día
-    ultimo_dia = Transaccion.objects.aggregate(ultimo_dia=Max('fecha_transaccion'))['ultimo_dia']
+    ultimo_dia = Transaccion.objects.filter(
+        tipo_transaccion='Ingreso'  # Filtramos solo los ingresos o activos
+    ).aggregate(ultimo_dia=Max('fecha_transaccion'))['ultimo_dia']
     if ultimo_dia:
         ventas_ultimo_dia = Transaccion.objects.filter(fecha_transaccion=ultimo_dia).aggregate(total=Sum('monto'))['total'] or 0
     else:
@@ -244,3 +249,29 @@ def transacciones(request):
 
     form = ExcelUploadForm()
     return render(request, 'Apps/transacciones.html', {'transacciones': transacciones, 'form': form})
+
+
+@login_required
+def ventas_agrupadas(request):
+    tipo = request.GET.get('tipo', 'mes')  # 'semana', 'mes' o 'año'
+    usuario = request.user
+
+    transacciones = Transaccion.objects.filter(
+        tipo_transaccion='Ingreso',
+        usuario=usuario
+    )
+
+    if tipo == 'semana':
+        agrupado = transacciones.annotate(periodo=TruncWeek('fecha_transaccion'))
+    elif tipo == 'año':
+        agrupado = transacciones.annotate(periodo=TruncYear('fecha_transaccion'))
+    else:
+        agrupado = transacciones.annotate(periodo=TruncMonth('fecha_transaccion'))
+
+    datos = agrupado.values('periodo').annotate(total=Sum('monto')).order_by('periodo')
+
+    resultado = {
+        'labels': [d['periodo'].strftime('%Y-%m-%d') for d in datos],
+        'valores': [float(d['total']) for d in datos]
+    }
+    return JsonResponse(resultado)

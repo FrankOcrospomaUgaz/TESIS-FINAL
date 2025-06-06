@@ -33,5 +33,6 @@ urlpatterns = [
     path('ventas_totales/', obtener_ventas_totales, name='ventas_totales'),
             path('registrar_gasto/', registrar_gasto, name='registrar_gasto'),  # Nueva ruta para registrar el gasto
 
+    path('ventas-agrupadas/', ventas_agrupadas, name='ventas_agrupadas'),
 
 ]
